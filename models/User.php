@@ -71,9 +71,69 @@
             return $output;
         }
 
-        public function update_user() {
-            
+        public function update_user($user) {
+            $user_id = $user['id'];
+            $name = $user['name'];
+            $email = $user['email'];
+            $photo = $user['photo'];
+            $role = $user['role'];
+            $password = $user['password'];
+            $pre_password = $user['pre_password'];
+
+            $query = "UPDATE $this->table SET";
+
+            if (!empty($name)) {
+                $query .= " name = '$name'";
+            }
+            if (!empty($email)) {
+                $query .= str_contains($query, '=') ? ", email = '$email'" : " email = '$email'";
+            }
+            if (!empty($photo)) {
+                $query .= str_contains($query, '=') ? ", photo = '$photo'" : " photo = '$photo'";
+            }
+            if (!empty($role)) {
+                $query .= str_contains($query, '=') ? ", role = '$role'" : " role = '$role'";
+            }
+            if (!empty($password)) {
+
+                $pre_pass_query = "SELECT password 
+                FROM $this->table 
+                WHERE id='$user[id]';";
+                $res = $this->conn->query($pre_pass_query);
+
+                if ($res->num_rows > 0) {
+                    while($row = $res->fetch_assoc()) {
+                        if (password_verify($pre_password, $row['password'])) {
+                            $hash = password_hash($password, PASSWORD_DEFAULT);
+                            $query .= str_contains($query, '=') ? ", password = '$hash'" : " password = '$hash'";
+                        } else {
+                            return array('message'=> "Previous password not valid");
+                        }
+                     }
+                } else {
+                    return array('message'=> "User not valid");
+                }
+            }
+            $query .= " WHERE id = $user_id";
+
+            $this->conn->query($query);
+            return array('message' => 'User data updated successfully', 'status'=> "ok");
         }
 
-    }
+        public function get_users_by_role($role){
+            $query = "SELECT id, name, email, photo, role
+            FROM $this->table 
+            WHERE role='$role';";
+            $result = $this->conn->query($query);
+
+            if ($result->num_rows > 0) {
+                $data = array();
+                while($row = $result->fetch_assoc()) {
+                    array_push($data, $row);
+                 }
+                 return array('data' => $data);
+            }
+            return array('message' => "No user found");
+        }
+    } 
  ?>

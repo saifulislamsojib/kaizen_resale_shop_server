@@ -2,7 +2,7 @@
 
 header("Access-Control-Allow-Origin: *");
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Methods: PATCH');
 
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -13,14 +13,18 @@ include_once '../../models/User.php';
  $name = trim($data['name']);
  $photo = trim($data['photo']);
  $password = trim($data['password']);
+ $pre_password = trim($data['pre_password']);
  $role = trim($data['role']);
 
  $errors = [];
- if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+ if (empty($email) && empty($password) && empty($pre_password) && empty($role) && empty($name) && empty($photo)) {
+    $errors[] = 'You must provide update data';
+ }
+ if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $errors['email'] = 'Valid email is required';
  }
 
- if (empty($name) || !preg_match("/^[a-zA-Z-' ]*$/",$name)) {
+ if (!empty($name) && !preg_match("/^[a-zA-Z-' ]*$/",$name)) {
     $errors['name'] = 'Valid name is required';
  }
 
@@ -28,8 +32,12 @@ include_once '../../models/User.php';
     $errors['role'] = 'Role must be user or seller';
  }
 
- if (empty($password) || strlen($password) < 6) {
+ if (!empty($password) && strlen($password) < 6) {
     $errors['Password'] = 'Password must be at least 6 characters long';
+  }
+
+ if (!empty($password) && (empty($pre_password) || strlen($pre_password) < 6)) {
+    $errors['pre_password'] = 'Previous password must be at least 6 characters long';
   }
 
   if (count($errors) > 0) {
@@ -38,14 +46,14 @@ include_once '../../models/User.php';
     exit;
   }
 
-  $db = new Database();
-  $conn = $db->connect();
-  $user = new User($conn);
-    $res = $user->signup_user($data);
-    if ($res['data']) {
+    $db = new Database();
+    $conn = $db->connect();
+    $user = new User($conn);
+    $res = $user->update_user($data);
+    if ($res['status'] === "ok") {
         http_response_code(200);
     } else {
-        http_response_code(401);
+        http_response_code(400);
     }
     echo json_encode($res);
  ?>

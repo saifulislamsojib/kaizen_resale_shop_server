@@ -3,6 +3,7 @@
         // db_stuff
         private $conn;
         private $table = 'products';
+        private $user_table = 'users';
 
         // User properties
         public $id;
@@ -16,6 +17,7 @@
         public $years_of_use;
         public $seller_id;
         public $created_at;
+        public $status;
         public $views;
 
         public function __construct(\mysqli $db) {
@@ -24,7 +26,7 @@
 
         function add_product($product) {
             $query = "INSERT INTO $this->table (title, image, description, category_id, location, resale_price, original_price, years_of_use, seller_id) 
-            VALUES ('$product[title]', '$product[image]', '$product[description]', '$product[category_id]', '$product[location]' ,'$product[resale_price]') ,'$product[original_price]') ,'$product[years_of_use]') ,'$product[seller_id]');";
+            VALUES ('$product[title]', '$product[image]', '$product[description]', '$product[category_id]', '$product[location]', '$product[resale_price]', '$product[original_price]', '$product[years_of_use]', '$product[seller_id]');";
             
             if ($this->conn->query($query)) {
                 return array('message'=> "Product added successfully", 'data'=> $product);
@@ -34,9 +36,13 @@
         }
 
         function get_product_by_id($id) {
-            $query = "SELECT * 
+            $view_query = "UPDATE $this->table SET views = views + 1  WHERE id = '$id'";
+            $this->conn->query($view_query);
+            $query = "SELECT products.*, users.name AS seller_name, users.email AS seller_email, users.photo AS seller_photo
             FROM $this->table 
-            WHERE id='$id';";
+            INNER JOIN $this->user_table ON $this->table.seller_id = $this->user_table.id 
+            and $this->table.id='$id';";
+
             $result = $this->conn->query($query);
 
             if ($result->num_rows > 0) {
@@ -48,9 +54,11 @@
         }
 
         function get_products_by_category($id) {
-            $query = "SELECT * 
+            $query = "SELECT products.*, users.name AS seller_name, users.email AS seller_email, users.photo AS seller_photo
             FROM $this->table 
-            WHERE category_id='$id';";
+            INNER JOIN $this->user_table ON $this->table.seller_id = $this->user_table.id 
+            and $this->table.category_id='$id';";
+
             $result = $this->conn->query($query);
 
             if ($result->num_rows > 0) {
@@ -64,9 +72,11 @@
         }
 
         function get_products_by_user_id($id) {
-            $query = "SELECT * 
+            $query = "SELECT products.*, users.name AS seller_name, users.email AS seller_email, users.photo AS seller_photo
             FROM $this->table 
-            WHERE seller_id='$id';";
+            INNER JOIN $this->user_table ON $this->table.seller_id = $this->user_table.id 
+            and $this->table.seller_id='$id';";
+            
             $result = $this->conn->query($query);
 
             if ($result->num_rows > 0) {
@@ -116,7 +126,7 @@
             if (!empty($years_of_use)) {
                 $query .= str_contains($query, '=') ? ", years_of_use = '$years_of_use'" : " years_of_use = '$years_of_use'";
             }
-            $query .= " WHERE id = $id";
+            $query .= " WHERE id='$id'";
 
             $this->conn->query($query);
             return array('message' => 'Product updated successfully', 'status'=> "ok");

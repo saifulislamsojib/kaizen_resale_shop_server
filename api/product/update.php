@@ -27,7 +27,7 @@ $years_of_use = trim($data['years_of_use']);
  $db = new Database();
  $conn = $db->connect();
  $product = new Product($conn);
- $res = $product->products_update($id);
+ $res = $product->products_update($data);
   if ($res['status'] === "ok") {
     http_response_code(200);
   } else {

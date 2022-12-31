@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
     class Database {
         private $host = 'localhost';
-        private $db_name = 'kaizen_resale_shop';
-        private $username = 'root';
-        private $password = '';
+        private $db_name = 'id20083757_kaizenresale';
+        private $username = 'id20083757_kaizen';
+        private $password = 'XkP8Uu6SA-86OXn~';
 
         function connect() {
             $conn = new mysqli($this->host, $this->username, $this->password, $this->db_name);
